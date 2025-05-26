@@ -67,7 +67,7 @@ def generate_response(model, tokenizer, input_text):
         model_type='indobart',
         lang_token='[indonesian]',
         return_tensors='pt',
-        padding='max_length'
+        padding='longest',
     )
 
     device = next(model.parameters()).device
