@@ -1,5 +1,7 @@
+import shutil
+import numpy as np
 import os
-from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Sequence, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 from transformers import PreTrainedTokenizer, BatchEncoding
 
 from collections.abc import Mapping
@@ -12,7 +14,7 @@ from transformers.utils import (
     to_py_obj,
 )
 import sentencepiece as spm
-from transformers.utils.generic import _is_jax, _is_numpy, _is_tensorflow, _is_torch, _is_torch_device
+from transformers.utils.generic import _is_tensorflow, _is_torch
 
 logger = logging.get_logger(__name__)
 

@@ -1,28 +1,7 @@
-
 import torch
-import shutil
-import random
-import numpy as np
-import pandas as pd
-from torch import optim
-from transformers import MBartForConditionalGeneration
-# from indobenchmark import IndoNLGTokenizer
-
-import torch
-from torch.utils.data import Dataset, DataLoader
-from transformers import BartForConditionalGeneration, Trainer, TrainingArguments
 import Levenshtein
-
 from transformers import BertTokenizer, AutoModel
 from sklearn.metrics.pairwise import cosine_similarity
-# from datasets import load_metric
-import evaluate
-
-from typing import Dict, List
-from dataclasses import dataclass
-from tqdm import tqdm
-from sklearn.metrics import classification_report, accuracy_score
-
 
 class DetoxificationEvaluator:
     def __init__(self, model_name="indobenchmark/indobert-base-p1"):
@@ -79,45 +58,6 @@ class DetoxificationEvaluator:
             results.append(scores)
         return results
 
-def make_compute_metrics(tokenizer, evaluator):
-    def compute_metrics(pred):
-        # Decode predictions and labels
-        preds = tokenizer.batch_decode(pred.predictions, skip_special_tokens=True)
-        labels = tokenizer.batch_decode(pred.label_ids, skip_special_tokens=True)
-
-        # Strip prefixes
-        preds_clean = [evaluator.strip_prefix(p) for p in preds]
-        labels_clean = [evaluator.strip_prefix(l) for l in labels]
-
-        # Compute similarity metrics on CPU to save GPU memory
-        cosine_sims = []
-        levenshtein_sims = []
-        for label, pred in zip(labels_clean, preds_clean):
-            result = evaluator.evaluate_pair(label, pred)
-            cosine_sims.append(result["cosine_similarity"])
-            levenshtein_sims.append(result["normalized_levenshtein"])
-
-        # BLEU and ROUGE (use tokenized BLEU and raw for ROUGE)
-        bleu_score = bleu_metric.compute(
-            predictions=[p.split() for p in preds_clean],
-            references=[[l.split()] for l in labels_clean]
-        )["bleu"]
-
-        rouge_score = rouge_metric.compute(
-            predictions=preds_clean,
-            references=labels_clean
-        )
-
-        return {
-            "cosine_similarity": float(np.mean(cosine_sims)),
-            "levenshtein_similarity": float(np.mean(levenshtein_sims)),
-            "bleu": float(bleu_score),
-            "rouge1": float(rouge_score["rouge1"].mid.fmeasure),
-            "rouge2": float(rouge_score["rouge2"].mid.fmeasure),
-            "rougeL": float(rouge_score["rougeL"].mid.fmeasure),
-        }
-
-    return compute_metrics
 
 def generate_response(model, tokenizer, input_text):
     inputs = tokenizer.prepare_input_for_generation(
@@ -125,7 +65,7 @@ def generate_response(model, tokenizer, input_text):
         model_type='indobart',
         lang_token='[indonesian]',
         return_tensors='pt',
-        padding='max_length'
+        padding='longest',
     )
 
     device = next(model.parameters()).device
